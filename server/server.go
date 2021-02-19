@@ -64,6 +64,11 @@ func (t *TradeServer) getOpenOrders(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, "Account keys are invalid.")
 		return
 	}
+	if accKeys != nil && len(accKeys) == 0 {
+		for k := range accounts {
+			accKeys = append(accKeys, k)
+		}
+	}
 	for _, accKey := range accKeys {
 		if account, ok := accounts[accKey]; ok {
 			openOrders, err := GetOpenOrders(account.accountID, account.client)
