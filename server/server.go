@@ -2,12 +2,13 @@ package tradeserver
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"net/http"
 	"strconv"
 	"sync"
+
 	model "github.com/ShakexIngwu/tradeserver/webullmodel"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 const (
