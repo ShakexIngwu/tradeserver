@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // GetStockOptions queries for options quotes.

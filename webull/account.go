@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strconv"
 
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // GetAccounts gets all associated accounts

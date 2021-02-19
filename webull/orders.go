@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // GetOrders returns orders.

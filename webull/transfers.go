@@ -9,7 +9,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // GetTransfers returns Transfers.

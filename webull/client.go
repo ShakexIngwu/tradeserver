@@ -13,8 +13,8 @@ import (
 	"net/url"
 	"time"
 
-	"tradeserver/webull/ws"
-	model "tradeserver/webullmodel"
+	"github.com/ShakexIngwu/tradeserver/webull/ws"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // Endpoints for the Webull API

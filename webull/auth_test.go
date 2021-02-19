@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 	"github.com/stretchr/testify/assert"
 )
 

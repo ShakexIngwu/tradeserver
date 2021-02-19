@@ -17,7 +17,7 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 const (

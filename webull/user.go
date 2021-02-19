@@ -3,7 +3,7 @@ package webull
 import (
 	"net/url"
 
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // GetUser gets user your details

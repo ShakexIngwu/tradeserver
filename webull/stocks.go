@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strconv"
 
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // GetTicker gets ticker information for a provided stock symbol

@@ -3,7 +3,7 @@ package webull
 import (
 	"net/url"
 
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // GetAccountDividends gets account `accountID` total dividends.

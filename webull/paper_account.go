@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 // GetPaperTradeAccounts gets information for all paper accounts.
