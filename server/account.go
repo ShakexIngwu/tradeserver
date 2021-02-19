@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"tradeserver/webull"
-	model "tradeserver/webullmodel"
+	"github.com/ShakexIngwu/tradeserver/webull"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 const AccInfoJsonFile = "/opt/kerish/acc_info.json"

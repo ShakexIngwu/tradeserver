@@ -1,7 +1,7 @@
 package tradeserver
 
 import (
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 type GetOpenOrdersResponse struct {

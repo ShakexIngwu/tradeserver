@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	model "tradeserver/webullmodel"
+	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
 const (
