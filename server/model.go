@@ -1,4 +1,4 @@
-package tradeserver
+package server
 
 import (
 	model "github.com/ShakexIngwu/tradeserver/webullmodel"

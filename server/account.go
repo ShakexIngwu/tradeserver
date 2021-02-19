@@ -1,4 +1,4 @@
-package tradeserver
+package server
 
 import (
 	"encoding/json"
