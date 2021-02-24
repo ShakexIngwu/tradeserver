@@ -1,1 +1,1 @@
-# keke
+# Infrastructure for trading platform

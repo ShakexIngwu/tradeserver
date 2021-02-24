@@ -24,6 +24,7 @@ type TradeServer struct {
 func NewTradeServer() (*TradeServer, error) {
 	err := NewAccounts()
 	if err != nil {
+		Log(Error, "Failed to load account information: %s", err.Error())
 		return nil, err
 	}
 
@@ -61,18 +62,22 @@ func (t *TradeServer) getOpenOrders(c *gin.Context) {
 	var accKeys []string
 	var res []GetOpenOrdersResponse
 	if err := c.BindQuery(&accKeys); err != nil {
+		Log(Info, "Invalid Account keys %v, error: %s", accKeys, err.Error())
 		c.JSON(http.StatusBadRequest, "Account keys are invalid.")
 		return
 	}
+	// If no account keys is passed in, then by default we will get open orders for all available accounts
 	if accKeys != nil && len(accKeys) == 0 {
 		for k := range accounts {
 			accKeys = append(accKeys, k)
 		}
 	}
+	Log(Debug, "Getting open orders for accounts %v", accKeys)
 	for _, accKey := range accKeys {
 		if account, ok := accounts[accKey]; ok {
 			openOrders, err := GetOpenOrders(account.accountID, account.client)
 			if err != nil {
+				Log(Error, "Failed to get open orders for account %s", accKey)
 				c.JSON(http.StatusInternalServerError, fmt.Sprintf("Cannot get open orders for account %s, error: %s", accKey, err.Error()))
 				return
 			}
@@ -81,11 +86,11 @@ func (t *TradeServer) getOpenOrders(c *gin.Context) {
 			openOrdersRes := GetOpenOrdersResponse{
 				orders:    account.openOrders,
 				accountID: account.accountID,
-				Username:  account.client.Username,
+				Username:  account.accountInfo.Username,
 			}
 			res = append(res, openOrdersRes)
 		} else {
-			fmt.Printf("Cannot find account %s", accKey)
+			Log(Warn,"Cannot find account %s", accKey)
 		}
 	}
 	c.JSON(http.StatusOK, res)
@@ -100,6 +105,7 @@ func (t *TradeServer) placeOrder(c *gin.Context) {
 	var succeed []string
 	var failed []string
 	if err := c.BindJSON(&reqBody); err != nil {
+		Log(Info, "Invalid request body, caught error: %s", err.Error())
 		c.JSON(http.StatusBadRequest, "Cannot parse request body.")
 		return
 	}
@@ -108,11 +114,13 @@ func (t *TradeServer) placeOrder(c *gin.Context) {
 			// Prepare stock order request params
 			tickerIDStr, err := account.client.GetTickerID(reqBody.Symbol)
 			if err != nil {
+				Log(Error, "Cannot find ticker by symbol %s, caught error: %s", reqBody.Symbol, err.Error())
 				c.JSON(http.StatusBadRequest, fmt.Sprintf("Cannot find ticker ID by symbol %s, error: %s", reqBody.Symbol, err.Error()))
 				return
 			}
 			tickerID, err := strconv.Atoi(tickerIDStr)
 			if err != nil {
+				Log(Error, "TickerID string %s cannot be converted into int32: %s", tickerIDStr, err.Error())
 				c.JSON(http.StatusInternalServerError, fmt.Sprintf("TickerID string %s cannot be converted into int32: %s", tickerIDStr, err.Error()))
 				return
 			}
@@ -135,14 +143,17 @@ func (t *TradeServer) placeOrder(c *gin.Context) {
 			}
 			_, err = account.client.PlaceOrder(account.accountID, orderRequest)
 			if err != nil {
+				Log(Error, "Failed to place order for account %s, caught error: %s", accKey, err.Error())
 				failed = append(failed, accKey)
 			} else {
 				succeed = append(succeed, accKey)
 			}
 		} else {
+			Log(Error, "Cannot find account %s when placing order", accKey)
 			failed = append(failed, accKey)
 		}
 	}
+	Log(Debug, "Order placed successfully for users %v, failed for users %v", succeed, failed)
 	c.JSON(http.StatusOK, fmt.Sprintf("Order succeeded for users %v;\nOrder failed for users %v", succeed, failed))
 }
 
@@ -152,6 +163,7 @@ func (t *TradeServer) modifyOrder(c *gin.Context) {
 	var missed []string
 	var failed []string
 	if err := c.BindJSON(&reqBody); err != nil {
+		Log(Info, "Invalid request body, caught error: %s", err.Error())
 		c.JSON(http.StatusBadRequest, "Cannot parse request body.")
 		return
 	}
@@ -160,6 +172,7 @@ func (t *TradeServer) modifyOrder(c *gin.Context) {
 		if account, ok := accounts[accKey]; ok {
 			openOrders, err := GetOpenOrders(account.accountID, account.client)
 			if err != nil {
+				Log(Error, "Failed to get open orders for account %s, caught error: %s", accKey, err.Error())
 				c.JSON(http.StatusInternalServerError, fmt.Sprintf("Cannot get open orders for account %s, error: %s", accKey, err.Error()))
 				return
 			}
@@ -174,11 +187,12 @@ func (t *TradeServer) modifyOrder(c *gin.Context) {
 				}
 			}
 			if matchedOrder == nil {
+				Log(Warn, "Cannot find order for account %s", accKey)
 				missed = append(missed, accKey)
 			} else {
 				orderRequest := model.PostStockOrderRequest{
 					Action:                    reqBody.Action,
-					ComboType:                 matchedOrder.ComboType,
+					ComboType:                 matchedOrder.ComboTickerType,
 					LmtPrice:                  reqBody.NewLmtPrice,
 					OrderType:                 reqBody.OrderType,
 					OutsideRegularTradingHour: reqBody.OutsideRegularTradingHour,
@@ -189,15 +203,18 @@ func (t *TradeServer) modifyOrder(c *gin.Context) {
 				}
 				_, err = account.client.ModifyOrder(account.accountID, fmt.Sprint(matchedOrder.orderID), orderRequest)
 				if err != nil {
+					Log(Error, "Failed to modify order for account %s, caught error: %s", accKey, err.Error())
 					failed = append(failed, accKey)
 				} else {
 					succeed = append(succeed, accKey)
 				}
 			}
 		} else {
+			Log(Error, "Cannot find account %s when modifying order", accKey)
 			failed = append(failed, accKey)
 		}
 	}
+	Log(Debug, "Order modification succeeded for users %v, failed for users %v, missed for users %v", succeed, failed, missed)
 	c.JSON(http.StatusOK, fmt.Sprintf("Order modification succeeded for users %v;\nOrder modification failed for users %v;\nOrder modification missed for users %v.", succeed, failed, missed))
 }
 
@@ -207,6 +224,7 @@ func (t *TradeServer) deleteOrder(c *gin.Context) {
 	var missed []string
 	var failed []string
 	if err := c.BindJSON(&reqBody); err != nil {
+		Log(Info, "Invalid request body, caught error: %s", err.Error())
 		c.JSON(http.StatusBadRequest, "Cannot parse request body.")
 		return
 	}
@@ -215,6 +233,7 @@ func (t *TradeServer) deleteOrder(c *gin.Context) {
 		if account, ok := accounts[accKey]; ok {
 			openOrders, err := GetOpenOrders(account.accountID, account.client)
 			if err != nil {
+				Log(Error, "Failed to get open orders for account %s, caught error: %s", accKey, err.Error())
 				c.JSON(http.StatusInternalServerError, fmt.Sprintf("Cannot get open orders for account %s, error: %s", accKey, err.Error()))
 				return
 			}
@@ -229,18 +248,22 @@ func (t *TradeServer) deleteOrder(c *gin.Context) {
 				}
 			}
 			if orderID == "" {
+				Log(Warn, "Cannot find order for account %s", accKey)
 				missed = append(missed, accKey)
 			} else {
 				_, err = account.client.CancelOrder(account.accountID, orderID)
 				if err != nil {
+					Log(Error, "Failed to cancel order for account %s, caught error: %s", accKey, err.Error())
 					failed = append(failed, accKey)
 				} else {
 					succeed = append(succeed, accKey)
 				}
 			}
 		} else {
+			Log(Error, "Cannot find account %s when cancelling order", accKey)
 			failed = append(failed, accKey)
 		}
 	}
+	Log(Debug, "Order cancellation succeeded for users %v, failed for users %v, missed for users %v", succeed, failed, missed)
 	c.JSON(http.StatusOK, fmt.Sprintf("Order cancellation succeeded for users %v;\nOrder cancellation failed for users %v;\nOrder cancellation missed for users %v.", succeed, failed, missed))
 }

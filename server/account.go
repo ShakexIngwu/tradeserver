@@ -22,7 +22,7 @@ type AccountInfo struct {
 
 type order struct {
 	action                    model.OrderSide
-	ComboType                 string
+	ComboTickerType           string
 	filledQuantity            int32
 	lmtPrice                  float32
 	orderID                   int32
@@ -37,8 +37,9 @@ type order struct {
 }
 
 type account struct {
-	accountID  string
-	client     *webull.Client
+	accountID string
+	accountInfo AccountInfo
+	client    webull.ClientItf
 	// openOrders will not always be updated, be sure to run GetOpenOrders first to update before using it
 	openOrders []*order
 }
@@ -92,41 +93,54 @@ func NewAccounts() error {
 
 		accounts[accKey] = account{
 			accountID:  accountID,
+			accountInfo: accInfo,
 			client:     client,
 			openOrders: openOrders,
 		}
+		Log(Debug, "Loaded account information for user %s.", accKey)
 	}
+	Log(Debug, "Successfully loaded all account information.")
 	return nil
 }
 
-func GetOpenOrders(accountID string, client *webull.Client) ([]*order, error) {
+func GetOpenOrders(accountID string, client webull.ClientItf) ([]*order, error) {
+	Log(Debug, "Start to get open orders for account ID %s.", accountID)
 	orderItems, err := client.GetOrders(accountID, model.WORKING, 10)
 	if err != nil {
 		return nil, err
 	}
 
 	var openOrders []*order
+	skipped := 0
 	for _, orderItem := range *orderItems {
 		if orderItem.Orders != nil && len(orderItem.Orders) == 1 {
 			filledQuantity, err := strconv.Atoi(orderItem.Orders[0].FilledQuantity)
 			if err != nil {
+				Log(Warn, "Failed to parse FilledQuantity from string to integer, skipping order...")
+				skipped += 1
 				continue
 			}
 			remainQuantity, err := strconv.Atoi(orderItem.Orders[0].RemainQuantity)
 			if err != nil {
+				Log(Warn, "Failed to parse RemainQuantity from string to integer, skipping order...")
+				skipped += 1
 				continue
 			}
 			totalQuantity, err := strconv.Atoi(orderItem.Orders[0].TotalQuantity)
 			if err != nil {
+				Log(Warn, "Failed to parse TotalQuantity from string to integer, skipping order...")
+				skipped += 1
 				continue
 			}
 			lmtPrice, err := strconv.ParseFloat(orderItem.LmtPrice, 32)
 			if err != nil {
+				Log(Warn, "Failed to parse limit price from string to float, skipping order...")
+				skipped += 1
 				continue
 			}
 			order := order{
 				action:                    orderItem.Action,
-				ComboType:                 orderItem.ComboType,
+				ComboTickerType:           orderItem.ComboTickerType,
 				filledQuantity:            int32(filledQuantity),
 				lmtPrice:                  float32(lmtPrice),
 				orderID:                   orderItem.Orders[0].OrderId,
@@ -142,5 +156,6 @@ func GetOpenOrders(accountID string, client *webull.Client) ([]*order, error) {
 			openOrders = append(openOrders, &order)
 		}
 	}
+	Log(Debug, "Successfully updated %d open orders for account ID %s, skipped %d orders", len(openOrders), accountID, skipped)
 	return openOrders, nil
 }

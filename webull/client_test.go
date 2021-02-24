@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	model "github.com/ShakexIngwu/tradeserver/webullmodel"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWebsocketConnect(t *testing.T) {

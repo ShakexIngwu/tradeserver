@@ -60,8 +60,23 @@ type Client struct {
 	DeviceID string
 
 	httpClient *http.Client
+	ClientItf
 }
 
+// ClientInf is an abstraction of order related function
+type ClientItf interface {
+	// Orders related
+	GetOrders(accountID string, status model.OrderStatus, count int32) (*[]model.GetOrdersItem, error)
+	IsTradeable(tickerID string) (*model.GetIsTradeableResponse, error)
+	PlaceOrder(accountID string, input model.PostStockOrderRequest) (*model.PostOrderResponse, error)
+	CheckOtocoOrder(accountID string, input model.PostOtocoOrderRequest) (*interface{}, error)
+	PlaceOtocoOrder(accountID string, input model.PostOtocoOrderRequest) (*interface{}, error)
+	CancelOrder(accountID, orderID string) (*interface{}, error)
+	ModifyOrder(accountID string, orderID string, input model.PostStockOrderRequest) (*interface{}, error)
+
+	// Utility related
+	GetTickerID(symbol string) (string, error)
+}
 
 // NewClient is a constructor for the Webull-Client client
 func NewClient(creds *Credentials) (c *Client, err error) {
