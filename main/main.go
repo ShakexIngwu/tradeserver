@@ -8,7 +8,7 @@ import (
 
 func main() {
 	var wg sync.WaitGroup
-
+	server.LogInit()
 	t, err := server.NewTradeServer()
 	if err != nil {
 		panic(err)

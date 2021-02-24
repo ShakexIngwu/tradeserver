@@ -67,7 +67,7 @@ func (t *TradeServer) getOpenOrders(c *gin.Context) {
 		return
 	}
 	// If no account keys is passed in, then by default we will get open orders for all available accounts
-	if accKeys != nil && len(accKeys) == 0 {
+	if accKeys == nil || len(accKeys) == 0 {
 		for k := range accounts {
 			accKeys = append(accKeys, k)
 		}
@@ -84,8 +84,8 @@ func (t *TradeServer) getOpenOrders(c *gin.Context) {
 			// Update account cached open orders each time
 			account.openOrders = openOrders
 			openOrdersRes := GetOpenOrdersResponse{
-				orders:    account.openOrders,
-				accountID: account.accountID,
+				Orders:    account.openOrders,
+				AccountID: account.accountID,
 				Username:  account.accountInfo.Username,
 			}
 			res = append(res, openOrdersRes)
@@ -179,14 +179,14 @@ func (t *TradeServer) modifyOrder(c *gin.Context) {
 			// update account open orders in case the order has been filled or cancelled.
 			account.openOrders = openOrders
 
-			var matchedOrder *order
+			var matchedOrder Order
 			for _, order := range account.openOrders {
-				if order.action == reqBody.Action && order.symbol == reqBody.Symbol && order.lmtPrice == reqBody.OldLmtPrice{
+				if order.Action == reqBody.Action && order.Symbol == reqBody.Symbol && order.LmtPrice == reqBody.OldLmtPrice{
 					matchedOrder = order
 					break
 				}
 			}
-			if matchedOrder == nil {
+			if &matchedOrder == nil {
 				Log(Warn, "Cannot find order for account %s", accKey)
 				missed = append(missed, accKey)
 			} else {
@@ -198,10 +198,10 @@ func (t *TradeServer) modifyOrder(c *gin.Context) {
 					OutsideRegularTradingHour: reqBody.OutsideRegularTradingHour,
 					Quantity:                  reqBody.Quantity,
 					SerialId:                  uuid.NewString(),
-					TickerId:                  matchedOrder.tickerId,
+					TickerId:                  matchedOrder.TickerId,
 					TimeInForce:               reqBody.TimeInForce,
 				}
-				_, err = account.client.ModifyOrder(account.accountID, fmt.Sprint(matchedOrder.orderID), orderRequest)
+				_, err = account.client.ModifyOrder(account.accountID, fmt.Sprint(matchedOrder.OrderID), orderRequest)
 				if err != nil {
 					Log(Error, "Failed to modify order for account %s, caught error: %s", accKey, err.Error())
 					failed = append(failed, accKey)
@@ -242,8 +242,8 @@ func (t *TradeServer) deleteOrder(c *gin.Context) {
 
 			orderID := ""
 			for _, order := range account.openOrders {
-				if order.action == reqBody.Action && order.symbol == reqBody.Symbol && order.lmtPrice == reqBody.LmtPrice {
-					orderID = fmt.Sprint(order.orderID)
+				if order.Action == reqBody.Action && order.Symbol == reqBody.Symbol && order.LmtPrice == reqBody.LmtPrice {
+					orderID = fmt.Sprint(order.OrderID)
 					break
 				}
 			}

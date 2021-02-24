@@ -20,33 +20,34 @@ type AccountInfo struct {
 	MFA        string `json:"mfa"`
 }
 
-type order struct {
-	action                    model.OrderSide
-	ComboTickerType           string
-	filledQuantity            int32
-	lmtPrice                  float32
-	orderID                   int32
-	orderType                 model.OrderType
-	outsideRegularTradingHour bool
-	remainQuantity            int32
-	status                    model.OrderStatus
-	symbol                    string
-	tickerId                  int32
-	timeInForce               model.TimeInForce
-	totalQuantity             int32
+type Order struct {
+	Action                    model.OrderSide   `json:"action"`
+	ComboTickerType           string            `json:"combo_ticker_type"`
+	FilledQuantity            int32             `json:"filled_quantity"`
+	LmtPrice                  float32           `json:"lmt_price"`
+	OrderID                   int32             `json:"order_id"`
+	OrderType                 model.OrderType   `json:"order_type"`
+	OutsideRegularTradingHour bool              `json:"outside_regular_trading_hour"`
+	RemainQuantity            int32             `json:"remain_quantity"`
+	Status                    model.OrderStatus `json:"status"`
+	Symbol                    string            `json:"symbol"`
+	TickerId                  int32             `json:"ticker_id"`
+	TimeInForce               model.TimeInForce `json:"time_in_force"`
+	TotalQuantity             int32             `json:"total_quantity"`
 }
 
 type account struct {
-	accountID string
+	accountID   string
 	accountInfo AccountInfo
-	client    webull.ClientItf
+	client      webull.ClientItf
 	// openOrders will not always be updated, be sure to run GetOpenOrders first to update before using it
-	openOrders []*order
+	openOrders []Order
 }
 
 var accounts = make(map[string]account)
 
 func NewAccounts() error {
+	Log(Debug, "Initializing accounts...")
 	accountInfoMap := make(map[string]AccountInfo)
 	jsonFile, err := os.Open(AccInfoJsonFile)
 	if err != nil {
@@ -92,10 +93,10 @@ func NewAccounts() error {
 		}
 
 		accounts[accKey] = account{
-			accountID:  accountID,
+			accountID:   accountID,
 			accountInfo: accInfo,
-			client:     client,
-			openOrders: openOrders,
+			client:      client,
+			openOrders:  openOrders,
 		}
 		Log(Debug, "Loaded account information for user %s.", accKey)
 	}
@@ -103,14 +104,14 @@ func NewAccounts() error {
 	return nil
 }
 
-func GetOpenOrders(accountID string, client webull.ClientItf) ([]*order, error) {
+func GetOpenOrders(accountID string, client webull.ClientItf) ([]Order, error) {
 	Log(Debug, "Start to get open orders for account ID %s.", accountID)
 	orderItems, err := client.GetOrders(accountID, model.WORKING, 10)
 	if err != nil {
 		return nil, err
 	}
 
-	var openOrders []*order
+	var openOrders []Order
 	skipped := 0
 	for _, orderItem := range *orderItems {
 		if orderItem.Orders != nil && len(orderItem.Orders) == 1 {
@@ -138,22 +139,22 @@ func GetOpenOrders(accountID string, client webull.ClientItf) ([]*order, error) 
 				skipped += 1
 				continue
 			}
-			order := order{
-				action:                    orderItem.Action,
+			order := Order{
+				Action:                    orderItem.Action,
 				ComboTickerType:           orderItem.ComboTickerType,
-				filledQuantity:            int32(filledQuantity),
-				lmtPrice:                  float32(lmtPrice),
-				orderID:                   orderItem.Orders[0].OrderId,
-				orderType:                 orderItem.Orders[0].OrderType,
-				outsideRegularTradingHour: orderItem.OutsideRegularTradingHour,
-				remainQuantity:            int32(remainQuantity),
-				status:                    orderItem.Status,
-				symbol:                    orderItem.Orders[0].Symbol,
-				tickerId:                  orderItem.Orders[0].TickerId,
-				timeInForce:               orderItem.Orders[0].TimeInForce,
-				totalQuantity:             int32(totalQuantity),
+				FilledQuantity:            int32(filledQuantity),
+				LmtPrice:                  float32(lmtPrice),
+				OrderID:                   orderItem.Orders[0].OrderId,
+				OrderType:                 orderItem.Orders[0].OrderType,
+				OutsideRegularTradingHour: orderItem.OutsideRegularTradingHour,
+				RemainQuantity:            int32(remainQuantity),
+				Status:                    orderItem.Status,
+				Symbol:                    orderItem.Orders[0].Symbol,
+				TickerId:                  orderItem.Orders[0].TickerId,
+				TimeInForce:               orderItem.Orders[0].TimeInForce,
+				TotalQuantity:             int32(totalQuantity),
 			}
-			openOrders = append(openOrders, &order)
+			openOrders = append(openOrders, order)
 		}
 	}
 	Log(Debug, "Successfully updated %d open orders for account ID %s, skipped %d orders", len(openOrders), accountID, skipped)
