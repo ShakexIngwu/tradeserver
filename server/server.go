@@ -90,7 +90,7 @@ func (t *TradeServer) getOpenOrders(c *gin.Context) {
 			}
 			res = append(res, openOrdersRes)
 		} else {
-			Log(Warn,"Cannot find account %s", accKey)
+			Log(Warn, "Cannot find account %s", accKey)
 		}
 	}
 	c.JSON(http.StatusOK, res)
@@ -181,7 +181,7 @@ func (t *TradeServer) modifyOrder(c *gin.Context) {
 
 			var matchedOrder Order
 			for _, order := range account.openOrders {
-				if order.Action == reqBody.Action && order.Symbol == reqBody.Symbol && order.LmtPrice == reqBody.OldLmtPrice{
+				if order.Action == reqBody.Action && order.Symbol == reqBody.Symbol && order.LmtPrice == reqBody.OldLmtPrice {
 					matchedOrder = order
 					break
 				}

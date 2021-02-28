@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetOpenOrders(t *testing.T) {
-	var emptyOrder []*order
+	var emptyOrder []Order
 	type args struct {
 		accountID string
 		client    *webull.ClientMock
@@ -16,7 +16,7 @@ func TestGetOpenOrders(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*order
+		want    []Order
 		wantErr bool
 	}{
 		{
@@ -25,21 +25,21 @@ func TestGetOpenOrders(t *testing.T) {
 				accountID: "test_ok",
 				client:    &webull.ClientMock{},
 			},
-			want: []*order{
+			want: []Order{
 				{
-					action:                    "BUY",
+					Action:                    "BUY",
 					ComboTickerType:           "stock",
-					filledQuantity:            1,
-					lmtPrice:                  100.00,
-					orderID:                   12345,
-					orderType:                 "LMT",
-					outsideRegularTradingHour: true,
-					remainQuantity:            9,
-					status:                    "Working",
-					symbol:                    "AMZN",
-					tickerId:                  54321,
-					timeInForce:               "GTC",
-					totalQuantity:             10,
+					FilledQuantity:            1,
+					LmtPrice:                  100.00,
+					OrderID:                   12345,
+					OrderType:                 "LMT",
+					OutsideRegularTradingHour: true,
+					RemainQuantity:            9,
+					Status:                    "Working",
+					Symbol:                    "AMZN",
+					TickerId:                  54321,
+					TimeInForce:               "GTC",
+					TotalQuantity:             10,
 				},
 			},
 			wantErr: false,

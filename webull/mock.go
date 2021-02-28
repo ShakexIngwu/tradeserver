@@ -27,7 +27,7 @@ type ClientMock struct {
 	DeviceID string
 
 	httpClient *http.Client
-	ClientItf
+	//ClientItf
 }
 
 // The following functions are mocking functions for client orders

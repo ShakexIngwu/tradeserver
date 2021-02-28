@@ -6,8 +6,8 @@ import (
 
 type GetOpenOrdersResponse struct {
 	Orders    []Order `json:"orders"`
-	AccountID string   `json:"account_id"`
-	Username  string   `json:"username"`
+	AccountID string  `json:"account_id"`
+	Username  string  `json:"username"`
 }
 
 type PostPlaceOrderRequest struct {
