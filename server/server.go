@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"sync"
@@ -54,8 +55,131 @@ func (t *TradeServer) buildOrderRoutes(parent *gin.RouterGroup) {
 	order.GET("/", t.getOrders)
 	order.GET("/open", t.getOpenOrders)
 	order.POST("/", t.placeOrder)
+	order.POST("/align", t.postAlignPositionRatios)
 	order.PUT("/", t.modifyOrder)
 	order.DELETE("/", t.deleteOrder)
+}
+
+func (t *TradeServer) postAlignPositionRatios(c *gin.Context) {
+	var reqBody PostAlignPositionRatiosRequest
+	var orders []model.PostStockOrderRequest
+
+	if err := c.Bind(&reqBody); err != nil {
+		c.JSON(http.StatusBadRequest, "Bad request.")
+		return
+	}
+	accKeys := reqBody.AccKeys
+	refAccKey := reqBody.RefAccKey
+	if _, ok := accounts[refAccKey]; !ok {
+		c.JSON(http.StatusBadRequest, "Reference account not found.")
+		return
+	}
+	for _, accKey := range accKeys {
+		if accKey == refAccKey {
+			continue
+		}
+		account, ok := accounts[accKey]
+		if !ok {
+			Log(Info, "%s account not found, skipped", accKey)
+			continue
+		}
+		orders = alignPositionRatios(refAccKey, accKey)
+		for _, order := range orders {
+			_, err := account.client.PlaceOrder(account.accountID, order)
+			if err != nil {
+				Log(Error, "Failed to place order for account %s, caught error: %s", accKey, err.Error())
+			}
+		}
+	}
+	c.JSON(http.StatusOK, fmt.Sprintf("Orders placed to align position ratios between %v and %s", accKeys, refAccKey))
+}
+
+func getAccountBalance(accKey string) float32 {
+	balance, err := strconv.ParseFloat(accounts[accKey].accountDetails.NetLiquidation, 32)
+	if err != nil {
+		return -1
+	}
+	return float32(balance)
+}
+
+func getAccountPositions(accKey string) map[int32]int32 {
+	positionsLite := make(map[int32]int32)
+	positions := accounts[accKey].accountDetails.Positions
+	for _, pos := range positions {
+		posCount, _ := strconv.Atoi(pos.Position)
+		positionsLite[pos.Ticker.TickerId] = int32(posCount)
+	}
+	return positionsLite
+}
+
+func getTickerPrice(tickerId int32, accKey string) (float32, error) {
+	quote, err := accounts[accKey].client.GetRealtimeStockQuote(fmt.Sprint(tickerId))
+	if err != nil {
+		return 0, err
+	}
+	price, err := strconv.ParseFloat(quote.PPrice, 32)
+	if err != nil {
+		return 0, err
+	}
+	return float32(price), nil
+}
+
+func alignPositionRatios(refAccKey string, accKey string) []model.PostStockOrderRequest {
+	var orders []model.PostStockOrderRequest
+
+	refPositions := getAccountPositions(refAccKey)
+	refBalance := getAccountBalance(refAccKey)
+	positions := getAccountPositions(accKey)
+	balance := getAccountBalance(accKey)
+
+	allTickers := make(map[int32]struct{})
+	for tickerId := range refPositions {
+		allTickers[tickerId] = struct{}{}
+	}
+	for tickerId := range positions {
+		allTickers[tickerId] = struct{}{}
+	}
+	for tickerId := range allTickers {
+		var refPos int32 = 0
+		var pos int32 = 0
+		if p, ok := refPositions[tickerId]; ok {
+			refPos = p
+		}
+		if p, ok := positions[tickerId]; ok {
+			pos = p
+		}
+
+		tickerPrice, err := getTickerPrice(tickerId, accKey)
+		if err != nil {
+			continue
+		}
+		refPosRatio := tickerPrice * float32(refPos) / refBalance
+		posRatio := tickerPrice * float32(pos) / balance
+		// Only align the positions when the difference is > 1% of the account value
+		if math.Abs(float64(posRatio-refPosRatio)) > 0.01 {
+			targetPos := int32(balance * refPosRatio / tickerPrice)
+			posDelta := targetPos - pos
+			if posDelta != 0 {
+				action := model.BUY
+				if posDelta < 0 {
+					action = model.SELL
+				}
+				order := model.PostStockOrderRequest{
+					Action:                    action,
+					ComboType:                 "stock",
+					LmtPrice:                  tickerPrice,
+					OrderType:                 model.LMT,
+					OutsideRegularTradingHour: true,
+					Quantity:                  int32(math.Abs(float64(posDelta))),
+					SerialId:                  uuid.NewString(),
+					TickerId:                  tickerId,
+					TimeInForce:               model.DAY,
+				}
+				orders = append(orders, order)
+			}
+		}
+	}
+	return orders
 }
 
 func (t *TradeServer) getOpenOrders(c *gin.Context) {
@@ -100,6 +224,24 @@ func (t *TradeServer) getOrders(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, nil)
 }
 
+func getModifiedQuantity(reqBody PostPlaceOrderRequest) map[string]int32 {
+	var posRatio float32
+	var refAccBal float32
+	if ContainsStr(reqBody.AccKeys, reqBody.RefAccKey) {
+		refAccBal = getAccountBalance(reqBody.RefAccKey)
+		posRatio = reqBody.LmtPrice * float32(reqBody.Quantity) / refAccBal
+	}
+	quantities := make(map[string]int32)
+	for _, accKey := range reqBody.AccKeys {
+		if accKey != reqBody.RefAccKey && posRatio > 0 {
+			quantities[accKey] = int32(getAccountBalance(accKey) * posRatio / reqBody.LmtPrice)
+		} else {
+			quantities[accKey] = reqBody.Quantity
+		}
+	}
+	return quantities
+}
+
 func (t *TradeServer) placeOrder(c *gin.Context) {
 	var reqBody PostPlaceOrderRequest
 	var succeed []string
@@ -109,6 +251,7 @@ func (t *TradeServer) placeOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, "Cannot parse request body.")
 		return
 	}
+	quantities := getModifiedQuantity(reqBody)
 	for _, accKey := range reqBody.AccKeys {
 		if account, ok := accounts[accKey]; ok {
 			// Prepare stock order request params
@@ -136,7 +279,7 @@ func (t *TradeServer) placeOrder(c *gin.Context) {
 				LmtPrice:                  reqBody.LmtPrice,
 				OrderType:                 reqBody.OrderType,
 				OutsideRegularTradingHour: reqBody.OutsideRegularTradingHour,
-				Quantity:                  reqBody.Quantity,
+				Quantity:                  quantities[accKey],
 				SerialId:                  uuid.NewString(),
 				TickerId:                  int32(tickerID),
 				TimeInForce:               reqBody.TimeInForce,

@@ -236,3 +236,7 @@ func (m *ClientMock) ModifyOrder(accountID string, orderID string, input model.P
 func (m *ClientMock) GetTickerID(symbol string) (string, error) {
 	return "", nil
 }
+
+func (m *ClientMock) GetRealtimeStockQuote(tickerID string) (*model.GetStockQuoteResponse, error) {
+	return nil, nil
+}

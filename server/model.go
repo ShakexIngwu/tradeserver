@@ -18,7 +18,13 @@ type PostPlaceOrderRequest struct {
 	OrderType                 model.OrderType   `json:"order_type"`
 	OutsideRegularTradingHour bool              `json:"outside_regular_trading_hour"`
 	Quantity                  int32             `json:"quantity" binding:"required"`
+	RefAccKey                 string            `json:"ref_acc_key"`
 	TimeInForce               model.TimeInForce `json:"time_in_force"`
+}
+
+type PostAlignPositionRatiosRequest struct {
+	AccKeys   []string `json:"acc_keys" binding:"required"`
+	RefAccKey string   `json:"ref_acc_key" binding:"required"`
 }
 
 type PutModifyOrderRequest struct {
