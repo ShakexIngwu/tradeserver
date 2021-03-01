@@ -10,7 +10,7 @@ import (
 	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
-const AccInfoJsonFile = "/Users/shakexin/Downloads/acc_info.json"
+const AccInfoJsonFile = "/home/jw/code/acc_info.json"
 
 type AccountInfo struct {
 	Username   string `json:"username"`
@@ -37,9 +37,10 @@ type Order struct {
 }
 
 type account struct {
-	accountID   string
-	accountInfo AccountInfo
-	client      webull.ClientItf
+	accountDetails	*model.GetAccountResponse
+	accountID   	string
+	accountInfo 	AccountInfo
+	client      	webull.ClientItf
 	// openOrders will not always be updated, be sure to run GetOpenOrders first to update before using it
 	openOrders []Order
 }
@@ -87,16 +88,23 @@ func NewAccounts() error {
 			return err
 		}
 
+		accountIdInt, _ := strconv.Atoi(accountID)
+		accountDetails, err := client.GetAccount(accountIdInt)
+		if err != nil {
+			return err
+		}
+
 		openOrders, err := GetOpenOrders(accountID, client)
 		if err != nil {
 			return err
 		}
 
 		accounts[accKey] = account{
-			accountID:   accountID,
-			accountInfo: accInfo,
-			client:      client,
-			openOrders:  openOrders,
+			accountDetails:	accountDetails,
+			accountID:   	accountID,
+			accountInfo: 	accInfo,
+			client:      	client,
+			openOrders:  	openOrders,
 		}
 		Log(Debug, "Loaded account information for user %s.", accKey)
 	}
