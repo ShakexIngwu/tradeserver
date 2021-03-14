@@ -3,7 +3,7 @@ SHELL := /bin/bash
 DOCKER_DIR := platform/docker
 TARGET := target
 
-all: ts
+all: gobuilder ts_base ts_container
 
 prep:
 	$(MKDIR) -p $(TARGET)
