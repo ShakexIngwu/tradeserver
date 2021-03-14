@@ -14,3 +14,11 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 .idea
+
+acc_info.json
+
+logs/*
+
+target
+
+main/tradeserver

@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  trade-server:
+    build:
+      context: ../../
+      dockerfile: platform/docker/Dockerfile
+      args:
+        VERSION: ${VERSION}
+    image: trade-server:${VERSION}
+    container_name: ts
+    restart: always
+    privileged: true
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    volumes:
+      - ../../logs/:/var/log/:rw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"

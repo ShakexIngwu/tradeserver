@@ -1,0 +1,13 @@
+ifdef COMPILE_LOUD
+HIDE:=
+else
+HIDE:=@
+endif
+CP = $(HIDE)cp
+MKDIR = $(HIDE)mkdir
+RM = $(HIDE)rm
+MV = $(HIDE)mv
+GO = $(HIDE)go
+MAKE = $(HIDE)make
+PUSHD = $(HIDE)pushd
+POPD = popd

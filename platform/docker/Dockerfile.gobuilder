@@ -1,0 +1,19 @@
+FROM ubuntu:latest
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV GOROOT "/usr/local/go"
+ENV GOPATH "/root/go"
+ENV PATH "$PATH:$GOROOT/bin:$GOPATH/bin"
+
+RUN mkdir -p $GOROOT/bin && \
+   mkdir -p $GOPATH && \
+   apt-get update && \
+   apt-get install -y --no-install-recommends software-properties-common && \
+   apt-get install -y --no-install-recommends tzdata && echo "Etc/UTC" > /etc/timezone && \
+   dpkg-reconfigure --frontend noninteractive tzdata && \
+   apt-get install -y --no-install-recommends bash wget libpam0g-dev && \
+   apt-get install -y --no-install-recommends autoconf automake libtool pkg-config gcc g++ git make cmake cpp binutils && \
+   apt-get install -y --no-install-recommends unixodbc unixodbc-dev upx && \
+   # install golang from official download page
+   wget -O go.tar.gz https://golang.org/dl/go1.15.7.linux-amd64.tar.gz && \
+   tar -C /usr/local -xvf go.tar.gz

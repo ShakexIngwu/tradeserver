@@ -10,7 +10,7 @@ import (
 	model "github.com/ShakexIngwu/tradeserver/webullmodel"
 )
 
-const AccInfoJsonFile = "/home/jw/code/acc_info.json"
+const AccInfoJsonFile = "/opt/tradeserver/config/acc_info.json"
 
 type AccountInfo struct {
 	Username   string `json:"username"`

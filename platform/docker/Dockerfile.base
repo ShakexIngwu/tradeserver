@@ -1,0 +1,10 @@
+FROM ubuntu:latest
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN mkdir -p /opt/tradeserver/bin && \
+    mkdir -p /opt/tradeserver/config && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends software-properties-common && \
+    apt-get install -y --no-install-recommends tzdata && echo "Etc/UTC" > /etc/timezone && \
+    dpkg-reconfigure --frontend noninteractive tzdata

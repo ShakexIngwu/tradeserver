@@ -1,0 +1,7 @@
+version: "3.9"
+services:
+  ts-base:
+    build:
+      context: ./
+      dockerfile: Dockerfile.base
+    image: "ts-base"
