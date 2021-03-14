@@ -76,6 +76,7 @@ type ClientItf interface {
 
 	// Utility related
 	GetTickerID(symbol string) (string, error)
+	GetRealtimeStockQuote(tickerID string) (*model.GetStockQuoteResponse, error)
 }
 
 // NewClient is a constructor for the Webull-Client client
