@@ -5,3 +5,9 @@ services:
       context: ./
       dockerfile: Dockerfile.base
     image: "ts-base"
+
+  go-builder-base:
+    build:
+      context: ./
+      dockerfile: Dockerfile.gobuilder
+    image: "go-builder-base"
